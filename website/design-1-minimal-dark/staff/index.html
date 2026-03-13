@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tznami — Staff Portal</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+  <!-- ====== LOGIN PAGE ====== -->
+  <div class="login-page">
+    <div class="login-card">
+      <div class="login-logo"><span style="color:var(--accent);">〰</span> TZNAMI</div>
+      <p class="login-subtitle">Staff Portal</p>
+      <div class="login-error" id="login-error"></div>
+      <div class="form-group">
+        <label for="login-password">Password</label>
+        <input type="password" id="login-password" placeholder="Enter staff password">
+      </div>
+      <button class="btn btn-primary" id="login-btn">Sign In</button>
+    </div>
+  </div>
+
+  <!-- ====== DASHBOARD ====== -->
+  <div class="staff-dashboard">
+
+    <!-- Staff Nav -->
+    <div class="staff-nav">
+      <div class="staff-nav-logo">
+        <span><span style="color:var(--accent);">〰</span> TZNAMI</span>
+        <span class="badge">Staff</span>
+      </div>
+      <div class="staff-nav-actions">
+        <button class="btn btn-small btn-secondary" id="btn-refresh">↻ Refresh</button>
+        <button class="btn btn-small btn-secondary" id="btn-export">📥 Export CSV</button>
+        <button class="btn btn-small btn-danger" id="btn-logout">Logout</button>
+      </div>
+    </div>
+
+    <div class="staff-content">
+
+      <!-- Stats Row -->
+      <div class="stats-row">
+        <div class="staff-stat-card">
+          <div class="stat-header">
+            <span class="stat-title">Total Orders</span>
+            <span class="stat-icon-sm">📦</span>
+          </div>
+          <div class="stat-value" id="stat-total-orders">0</div>
+          <div class="stat-change">All time</div>
+        </div>
+        <div class="staff-stat-card">
+          <div class="stat-header">
+            <span class="stat-title">Pending</span>
+            <span class="stat-icon-sm">⏳</span>
+          </div>
+          <div class="stat-value" id="stat-pending">0</div>
+          <div class="stat-change">Needs attention</div>
+        </div>
+        <div class="staff-stat-card">
+          <div class="stat-header">
+            <span class="stat-title">Shipped / Delivered</span>
+            <span class="stat-icon-sm">🚚</span>
+          </div>
+          <div class="stat-value" id="stat-shipped">0</div>
+          <div class="stat-change">Completed</div>
+        </div>
+        <div class="staff-stat-card">
+          <div class="stat-header">
+            <span class="stat-title">Revenue</span>
+            <span class="stat-icon-sm">💰</span>
+          </div>
+          <div class="stat-value" id="stat-revenue">€0</div>
+          <div class="stat-change">Total earned</div>
+        </div>
+      </div>
+
+      <!-- Main Dashboard Grid -->
+      <div class="dashboard-grid">
+
+        <!-- Orders Panel -->
+        <div class="dash-panel">
+          <div class="dash-panel-header">
+            <h3>📋 Recent Orders</h3>
+          </div>
+          <div class="orders-toolbar">
+            <input type="text" class="search-input" id="order-search" placeholder="Search orders, customers, cities...">
+            <select class="filter-select" id="order-status-filter">
+              <option value="all">All Status</option>
+              <option value="pending">Pending</option>
+              <option value="processing">Processing</option>
+              <option value="shipped">Shipped</option>
+              <option value="delivered">Delivered</option>
+            </select>
+          </div>
+          <div class="dash-panel-body">
+            <div class="orders-table-wrap">
+              <table class="orders-table">
+                <thead>
+                  <tr>
+                    <th>Order ID</th>
+                    <th>Customer</th>
+                    <th>Date</th>
+                    <th>Items</th>
+                    <th>Total</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="orders-tbody">
+                  <!-- Rendered by JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Inventory Panel -->
+        <div class="dash-panel">
+          <div class="dash-panel-header">
+            <h3>📦 Inventory</h3>
+          </div>
+          <div class="dash-panel-body">
+            <div id="low-stock-alerts"></div>
+            <div class="inventory-list" id="inventory-list">
+              <!-- Rendered by JS -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== ORDER DETAIL MODAL ====== -->
+  <div class="order-detail-overlay" id="order-detail-overlay">
+    <div class="order-detail-modal">
+      <div class="order-detail-header">
+        <h3>Order Details</h3>
+        <button class="order-detail-close" id="order-detail-close">✕</button>
+      </div>
+      <div class="order-detail-body" id="order-detail-body">
+        <!-- Rendered by JS -->
+      </div>
+    </div>
+  </div>
+
+  <script src="../js/staff.js"></script>
+</body>
+</html>
