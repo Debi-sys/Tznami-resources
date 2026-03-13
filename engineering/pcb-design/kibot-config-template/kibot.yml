@@ -1,0 +1,186 @@
+# KiBot v2 configuration — Tznami PCB project
+# Place this file in the same directory as your .kicad_pro file.
+# Run with: kibot -c kibot.yml
+# Docs: https://github.com/INTI-CMNB/KiBot/blob/master/docs/documentation.md
+
+kibot:
+  version: 1
+
+preflight:
+  run_drc: true
+  ignore_unconnected: false
+  check_zone_fills: true
+  run_erc: true
+
+filters:
+  - name: only_jlcpcb_parts
+    comment: "Filter DNF components from BOM"
+    type: generic
+    exclude_refs:
+      - /^TP.*/   # exclude test points
+
+outputs:
+
+  # ============================================================
+  # Gerber files — one per copper/mask/silkscreen layer
+  # ============================================================
+  - name: gerbers
+    comment: "Gerber files for PCB fabrication (JLCPCB/PCBWay compatible)"
+    type: gerber
+    dir: output/gerbers
+    options:
+      # Use KiCad default settings (protel extensions = layer name extensions)
+      use_gerber_net_attributes: true
+      use_gerber_x2_attributes: true
+      create_gerber_job_file: true
+      output: "%f-%i%I%v.%x"
+      gerber_precision: 4.6
+      use_aux_axis_as_origin: false
+      line_width: 0.1
+      subtract_mask_from_silk: true
+    layers:
+      - layer: F.Cu
+        suffix: F_Cu
+        description: "Front copper"
+      - layer: B.Cu
+        suffix: B_Cu
+        description: "Back copper"
+      - layer: F.Paste
+        suffix: F_Paste
+        description: "Front solder paste"
+      - layer: B.Paste
+        suffix: B_Paste
+        description: "Back solder paste"
+      - layer: F.Silkscreen
+        suffix: F_Silkscreen
+        description: "Front silkscreen"
+      - layer: B.Silkscreen
+        suffix: B_Silkscreen
+        description: "Back silkscreen"
+      - layer: F.Mask
+        suffix: F_Mask
+        description: "Front solder mask"
+      - layer: B.Mask
+        suffix: B_Mask
+        description: "Back solder mask"
+      - layer: Edge.Cuts
+        suffix: Edge_Cuts
+        description: "Board outline"
+
+  # ============================================================
+  # Drill file (Excellon format, JLCPCB compatible)
+  # ============================================================
+  - name: drill
+    comment: "Excellon drill file"
+    type: excellon
+    dir: output/gerbers
+    options:
+      metric_units: true
+      minimal_header: false
+      mirror_y_axis: false
+      pth_and_npth_single_file: false
+      use_aux_axis_as_origin: false
+      route_mode_for_oval_holes: true
+
+  # ============================================================
+  # Gerber ZIP — ready to upload directly to JLCPCB
+  # ============================================================
+  - name: gerber_zip
+    comment: "ZIP all Gerbers + drill for direct fab upload"
+    type: compress
+    dir: output
+    options:
+      format: ZIP
+      output: "%f-gerbers-%i%v.zip"
+    files:
+      - from_output: gerbers
+        dest: /
+      - from_output: drill
+        dest: /
+
+  # ============================================================
+  # BOM — CSV format for LCSC/Digi-Key ordering
+  # ============================================================
+  - name: bom_csv
+    comment: "Bill of Materials as CSV"
+    type: bom
+    dir: output/bom
+    options:
+      output: "%f-%i%v.csv"
+      ref_separator: ","
+      columns:
+        - field: Row
+          name: "#"
+        - field: References
+          name: Reference
+        - field: Part
+          name: Value
+        - field: Footprint
+          name: Footprint
+        - field: "Quantity Per PCB"
+          name: Qty
+        - field: Manufacturer
+          name: Manufacturer
+        - field: MPN
+          name: MPN
+        - field: LCSC
+          name: LCSC_PN
+        - field: Description
+          name: Description
+      group_fields:
+        - Value
+        - Footprint
+        - MPN
+      normalize_values: true
+      normalize_locale: true
+      no_conflict:
+        - LCSC
+        - MPN
+      exclude_filter: only_jlcpcb_parts
+
+  # ============================================================
+  # iBOM — interactive HTML component placement map
+  # ============================================================
+  - name: ibom_html
+    comment: "Interactive BOM (iBOM) HTML — open in browser to see component locations"
+    type: ibom
+    dir: output/bom
+    options:
+      output: "%f-ibom%v.html"
+      dark_mode: false
+      hide_pads: false
+      show_fabrication: false
+      highlight_pin1: all
+      include_nets: false
+      sort_order: C,R,L,D,U,Y,X,F,SW,A,~
+
+  # ============================================================
+  # 3D Render — top and bottom PNG (requires KiCad 3D models)
+  # ============================================================
+  - name: render_top
+    comment: "3D render — top view"
+    type: render_3d
+    dir: output/renders
+    options:
+      output: "%f-3d-top%v.png"
+      view: top
+      ray_tracing: true
+      realistic: true
+      width: 1920
+      height: 1080
+      background1: "#FFFFFF"
+      background2: "#FFFFFF"
+
+  - name: render_bottom
+    comment: "3D render — bottom view"
+    type: render_3d
+    dir: output/renders
+    options:
+      output: "%f-3d-bottom%v.png"
+      view: bottom
+      ray_tracing: true
+      realistic: true
+      width: 1920
+      height: 1080
+      background1: "#FFFFFF"
+      background2: "#FFFFFF"

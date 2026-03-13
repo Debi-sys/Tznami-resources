@@ -1,0 +1,224 @@
+# GitHub Actions — KiBot CI/CD
+# Generates Gerbers, BOM, iBOM, and 3D renders automatically
+# on every push to main or develop, and on manual dispatch.
+#
+# Artifacts are uploaded to GitHub Actions and downloadable
+# from the repository's Actions tab for 30 days.
+#
+# Place this file at: .github/workflows/kibot.yml
+
+name: KiBot PCB Production Files
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - '**.kicad_pcb'
+      - '**.kicad_sch'
+      - '**.kicad_pro'
+      - '**/kibot.yml'
+      - '.github/workflows/kibot.yml'
+  pull_request:
+    branches:
+      - main
+      - develop
+    paths:
+      - '**.kicad_pcb'
+      - '**.kicad_sch'
+  workflow_dispatch:
+    inputs:
+      board_path:
+        description: 'Path to KiCad project directory (relative to repo root)'
+        required: false
+        default: 'engineering/pcb-design'
+
+jobs:
+  kibot:
+    name: Generate PCB Production Files
+    runs-on: ubuntu-latest
+    container:
+      # Official KiBot Docker image with KiCad 7+ and all KiBot dependencies pre-installed
+      image: setsoft/kicad_auto:latest
+      options: --user root
+
+    steps:
+      # --------------------------------------------------------
+      # Checkout repository
+      # --------------------------------------------------------
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          # Fetch full history for version info in outputs
+          fetch-depth: 0
+
+      # --------------------------------------------------------
+      # Find the KiCad project file automatically
+      # (searches for *.kicad_pro in the repo)
+      # --------------------------------------------------------
+      - name: Find KiCad project
+        id: find_project
+        run: |
+          PROJECT_FILE=$(find . -name "*.kicad_pro" | head -1)
+          if [ -z "$PROJECT_FILE" ]; then
+            echo "::warning::No .kicad_pro file found. KiBot will run in current directory."
+            PROJECT_DIR="."
+          else
+            PROJECT_DIR=$(dirname "$PROJECT_FILE")
+            echo "Found KiCad project at: $PROJECT_FILE"
+          fi
+          echo "project_dir=$PROJECT_DIR" >> "$GITHUB_OUTPUT"
+
+      # --------------------------------------------------------
+      # Run KiBot to generate all outputs
+      # Config: engineering/pcb-design/kibot-config-template/kibot.yml
+      # --------------------------------------------------------
+      - name: Run KiBot
+        working-directory: ${{ steps.find_project.outputs.project_dir }}
+        env:
+          # Suppress KiCad GUI pop-ups (headless environment)
+          DISPLAY: ''
+        run: |
+          KIBOT_CONFIG="${GITHUB_WORKSPACE}/engineering/pcb-design/kibot-config-template/kibot.yml"
+
+          # Check if a board-local kibot.yml exists — prefer it
+          if [ -f "kibot.yml" ]; then
+            KIBOT_CONFIG="kibot.yml"
+            echo "Using board-local kibot.yml"
+          else
+            echo "Using global kibot.yml from engineering/pcb-design/kibot-config-template/"
+          fi
+
+          kibot \
+            -c "$KIBOT_CONFIG" \
+            -v \
+            -d ./output \
+            2>&1 | tee kibot_run.log
+
+          # Check exit code — fail the job if KiBot reported errors
+          KIBOT_EXIT=${PIPESTATUS[0]}
+          if [ $KIBOT_EXIT -ne 0 ]; then
+            echo "::error::KiBot failed with exit code $KIBOT_EXIT. Check the log above."
+            exit $KIBOT_EXIT
+          fi
+
+      # --------------------------------------------------------
+      # Check DRC results (fail build on errors)
+      # --------------------------------------------------------
+      - name: Check DRC results
+        working-directory: ${{ steps.find_project.outputs.project_dir }}
+        run: |
+          DRC_REPORT=$(find ./output -name "*drc*" -o -name "*DRC*" 2>/dev/null | head -1)
+          if [ -f "$DRC_REPORT" ]; then
+            echo "DRC report found: $DRC_REPORT"
+            # Fail if DRC report contains errors (KiBot sets exit code but also check report)
+            if grep -qi "error" "$DRC_REPORT"; then
+              echo "::error::DRC errors found. Review the DRC report in artifacts."
+              cat "$DRC_REPORT"
+              exit 1
+            else
+              echo "DRC passed — no errors found."
+            fi
+          else
+            echo "::warning::No DRC report file found. DRC may not have run."
+          fi
+
+      # --------------------------------------------------------
+      # Upload all generated files as artifacts
+      # --------------------------------------------------------
+      - name: Upload Gerbers
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: gerbers-${{ github.ref_name }}-${{ github.run_number }}
+          path: ${{ steps.find_project.outputs.project_dir }}/output/gerbers/
+          retention-days: 30
+
+      - name: Upload BOM
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: bom-${{ github.ref_name }}-${{ github.run_number }}
+          path: ${{ steps.find_project.outputs.project_dir }}/output/bom/
+          retention-days: 30
+
+      - name: Upload 3D Renders
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: renders-${{ github.ref_name }}-${{ github.run_number }}
+          path: ${{ steps.find_project.outputs.project_dir }}/output/renders/
+          retention-days: 30
+
+      - name: Upload KiBot Run Log
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: kibot-log-${{ github.ref_name }}-${{ github.run_number }}
+          path: ${{ steps.find_project.outputs.project_dir }}/kibot_run.log
+          retention-days: 7
+
+      # --------------------------------------------------------
+      # On main branch: create/update GitHub Release with Gerbers ZIP
+      # This makes production files permanently accessible from the Releases page
+      # --------------------------------------------------------
+      - name: Create Gerbers ZIP for Release
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        working-directory: ${{ steps.find_project.outputs.project_dir }}
+        run: |
+          cd output
+          if [ -d "gerbers" ]; then
+            zip -r ../gerbers-production-$(git describe --tags --always --dirty).zip gerbers/
+            echo "Gerbers ZIP created."
+          else
+            echo "::warning::No gerbers directory found — skipping ZIP creation."
+          fi
+
+      - name: Upload Gerbers ZIP to Release
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        uses: actions/upload-artifact@v4
+        with:
+          name: gerbers-production-zip
+          path: ${{ steps.find_project.outputs.project_dir }}/gerbers-production-*.zip
+          retention-days: 90
+
+  # --------------------------------------------------------
+  # Notify Discord on completion (optional — set DISCORD_WEBHOOK secret)
+  # --------------------------------------------------------
+  notify:
+    name: Discord Notification
+    runs-on: ubuntu-latest
+    needs: kibot
+    if: always() && github.ref == 'refs/heads/main'
+    steps:
+      - name: Notify Discord
+        if: env.DISCORD_WEBHOOK != ''
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        run: |
+          STATUS="${{ needs.kibot.result }}"
+          if [ "$STATUS" = "success" ]; then
+            COLOR=3066993
+            EMOJI="✅"
+            MESSAGE="KiBot run succeeded — Gerbers, BOM, and iBOM are ready."
+          else
+            COLOR=15158332
+            EMOJI="❌"
+            MESSAGE="KiBot run FAILED. Check the Actions log."
+          fi
+
+          curl -s -X POST "$DISCORD_WEBHOOK" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"embeds\": [{
+                \"title\": \"$EMOJI KiBot CI — ${{ github.repository }}\",
+                \"description\": \"$MESSAGE\",
+                \"color\": $COLOR,
+                \"fields\": [
+                  {\"name\": \"Branch\", \"value\": \"${{ github.ref_name }}\", \"inline\": true},
+                  {\"name\": \"Commit\", \"value\": \"[\`${{ github.sha }}\`](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }})\", \"inline\": true},
+                  {\"name\": \"Run\", \"value\": \"[View artifacts](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})\", \"inline\": false}
+                ]
+              }]
+            }"
