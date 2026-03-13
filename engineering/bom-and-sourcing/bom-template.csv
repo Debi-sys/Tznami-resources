@@ -1,0 +1,13 @@
+Reference,Value,Footprint,Quantity,Supplier,PartNumber,UnitCost_USD,TotalCost_USD,Notes
+SW1-SW68,Kailh CPG151101S11 hotswap socket,Kailh_Socket_MX,68,LCSC,C2803348,0.08,5.44,MX hotswap sockets — one per switch position
+D1-D68,1N4148W diode SOD-123,D_SOD-123,68,LCSC,C81598,0.01,0.68,Signal diodes for switch matrix COL2ROW
+U1,STM32F401CCU6,UFQFPN-48_7x7mm_P0.5mm,1,LCSC,C8734,3.20,3.20,ARM Cortex-M4 MCU 256KB flash 64KB RAM
+J1,USB4135-GF-A USB-C receptacle,USB_C_Receptacle_HRO_TYPE-C-31-M-12,1,LCSC,C165948,0.55,0.55,16-pin USB-C connector with through-hole stabilization tabs
+U2,USBLC6-2SC6 ESD protection,SOT-23-6,1,LCSC,C2827693,0.08,0.08,USB ESD TVS diode — place within 5mm of connector
+C1-C8,100nF MLCC 0402 10V X5R,C_0402_1005Metric,8,LCSC,C14663,0.006,0.05,Decoupling caps — one per MCU VDD pin (C1-C4) + USB/crystal (C5-C8)
+C9-C10,4.7uF MLCC 0805 10V X5R,C_0805_2012Metric,2,LCSC,C1779,0.04,0.08,Bulk decoupling on 3.3V rail
+Y1,8MHz crystal 18pF 20ppm SMD-5032,Crystal_SMD_5032-2Pin_5.0x3.2mm,1,LCSC,C115962,0.18,0.18,HSE crystal — verify load cap value from datasheet
+LED1-LED68,SK6812 MINI-E reverse-mount RGB LED,LED_SK6812_MINI_E,68,LCSC,C2890364,0.08,5.44,Per-key RGB — reverse mount through PCB for south-facing glow
+F1,Polyfuse MF-MSMF050-2 500mA,Fuse_0805_2012Metric,1,LCSC,C383603,0.07,0.07,Resettable polyfuse on VBUS for overcurrent protection
+SW_RESET,Alps SKQGAKE010 tactile switch,SW_Push_1P1T_NO_Vertical,1,LCSC,C393937,0.06,0.06,Reset switch — connects NRST to GND
+ENC1,EC11 rotary encoder 30 detent,RotaryEncoder_Alps_EC11E-Switch_Vertical_H20mm,1,LCSC,C255523,0.85,0.85,Rotary encoder with push-switch — optional per layout

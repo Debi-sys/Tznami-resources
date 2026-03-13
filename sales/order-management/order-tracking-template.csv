@@ -1,0 +1,6 @@
+OrderID,Date,CustomerName,Email,Product,Variant,Quantity,UnitPrice,Total,PaymentStatus,FulfillmentStatus,TrackingNumber,Carrier,Notes
+TZ-2024-0001,2024-03-15,Alex Rivera,alex.rivera@email.com,Tznami KB65,Charcoal Night,1,199.00,199.00,Paid,Shipped,9400111899223456789012,USPS,Delivered 2024-03-21
+TZ-2024-0002,2024-03-15,Morgan Chen,morgan.chen@email.com,Tznami KB65,Dusk Blue,1,199.00,199.00,Paid,Shipped,9400111899223456789034,USPS,Delivered 2024-03-22
+TZ-2024-0003,2024-03-16,Jamie Park,jamie.park@email.com,Tznami KB65,Charcoal Night,1,199.00,199.00,Paid,Fulfilled,9400111899223456789056,USPS,Delivered 2024-03-23; customer confirmed receipt via Discord
+TZ-2024-0004,2024-03-17,Sam Okonkwo,sam.okonkwo@email.com,PC Plate Add-on,65% PC,1,25.00,25.00,Paid,Fulfilled,9261290100830167234501,USPS First Class,Accessory only order; no keyboard
+TZ-2024-0005,2024-03-18,Riley Thompson,riley.t@email.com,Tznami KB65,Sakura,2,199.00,398.00,Paid,Pending,,, Batch order — awaiting stock confirmation; follow up by 2024-03-25
